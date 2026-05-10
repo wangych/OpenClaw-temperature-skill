@@ -1,0 +1,19 @@
+{
+  "name": "openclaw-temperature-skill",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Thin OpenClaw skill for hosted GIF reactions with automatic API key registration and a 1-month free trial.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/wangych/OpenClaw-temperature-skill.git"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

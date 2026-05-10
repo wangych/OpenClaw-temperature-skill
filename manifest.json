@@ -1,0 +1,32 @@
+{
+  "name": "openclaw-temperature",
+  "display_name": "OpenClaw Temperature",
+  "version": "0.1.0",
+  "description": "Adds occasional GIF reactions after OpenClaw's main reply, with automatic API key registration and a 1-month free trial.",
+  "author": "wangych",
+  "homepage": "https://claw-temp.nydhfc.cn",
+  "repository": "https://github.com/wangych/OpenClaw-temperature-skill",
+  "hosted_api_base_url": "https://claw-temp.nydhfc.cn",
+  "entry": "index.js",
+  "skill": "SKILL.md",
+  "files": [
+    "SKILL.md",
+    "index.js",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "permissions": {
+    "network": [
+      "https://claw-temp.nydhfc.cn"
+    ],
+    "local_storage": [
+      ".openclaw-temperature/api-key.json"
+    ],
+    "shell": false,
+    "file_read": false
+  },
+  "billing": {
+    "trial_days": 30,
+    "recharge_url": "https://claw-temp.nydhfc.cn/buy"
+  }
+}
