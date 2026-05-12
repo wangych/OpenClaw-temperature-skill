@@ -61,6 +61,24 @@ Start with only these:
 
 Do not call this skill on every turn. It is designed for occasional emotional value, not constant animation.
 
+## Direct GIF Requests
+
+If the user directly asks OpenClaw to send a GIF, call `createTemperatureGifReply`:
+
+```js
+import { createTemperatureGifReply } from "./index.js";
+
+const gif = await createTemperatureGifReply({
+  eventType: "user_delight",
+  emotionalFamily: "playful",
+  metadata: {
+    summary: "User directly asked for a fun GIF"
+  }
+});
+```
+
+Send `gif.markdown` if it is not empty.
+
 ## Security Notes
 
 This skill:

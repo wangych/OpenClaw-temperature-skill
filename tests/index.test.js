@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import {
   buildReactionEvent,
+  createTemperatureGifReply,
+  formatReactionMarkdown,
   initializeTemperatureLayer,
   requestReaction
 } from "../index.js";
@@ -86,4 +88,58 @@ test("contains marketplace metadata", async () => {
   assert.equal(parsedManifest.repository, "https://github.com/wangych/OpenClaw-temperature-skill");
   assert.equal(parsedManifest.billing.trial_days, 30);
   assert.deepEqual(parsedManifest.permissions.network, ["https://claw-temp.nydhfc.cn"]);
+});
+
+test("formats a direct GIF response as markdown", async () => {
+  const reactionResult = {
+    mode: "react",
+    reaction: {
+      caption: "这下气氛立刻活过来了",
+      asset_url: "https://claw-temp.nydhfc.cn/assets/gifs/playful/user_delight/low/playful-user_delight-low-001.gif"
+    }
+  };
+
+  const markdown = formatReactionMarkdown(reactionResult);
+
+  assert.equal(markdown.includes("这下气氛立刻活过来了"), true);
+  assert.equal(markdown.includes("![这下气氛立刻活过来了]("), true);
+  assert.equal(markdown.includes("playful-user_delight-low-001.gif"), true);
+});
+
+test("creates markdown for direct user GIF requests", async () => {
+  const calls = [];
+  let storedApiKey = "ocl_direct_request_key";
+  const storage = {
+    async getItem() {
+      return storedApiKey;
+    },
+    async setItem(apiKey) {
+      storedApiKey = apiKey;
+    }
+  };
+  const fetchImpl = async (url, options) => {
+    calls.push({ url, options });
+    return new Response(JSON.stringify({
+      decision: {
+        status: "reacted",
+        reason_codes: ["eligible", "asset_exact_match"]
+      },
+      reaction: {
+        caption: "这下气氛立刻活过来了",
+        asset_url: "https://claw-temp.nydhfc.cn/assets/gifs/playful/user_delight/low/playful-user_delight-low-001.gif"
+      }
+    }), { status: 200 });
+  };
+
+  const result = await createTemperatureGifReply({
+    eventType: "user_delight",
+    emotionalFamily: "playful",
+    storage,
+    fetchImpl
+  });
+
+  assert.equal(result.mode, "react");
+  assert.equal(result.markdown.includes("playful-user_delight-low-001.gif"), true);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].options.headers.authorization, "Bearer ocl_direct_request_key");
 });

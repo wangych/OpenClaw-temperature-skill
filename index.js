@@ -281,6 +281,55 @@ export function attachReactionAfterReply({ mainReply, reactionResult }) {
   };
 }
 
+export function formatReactionMarkdown(reactionResult) {
+  if (!reactionResult || reactionResult.mode === "no_reaction") {
+    return "";
+  }
+
+  if (reactionResult.mode === "recharge_required") {
+    return `OpenClaw 温度层试用已到期，请续期后继续使用：${reactionResult.rechargeUrl}`;
+  }
+
+  if (reactionResult.mode !== "react" || !reactionResult.reaction) {
+    return "";
+  }
+
+  const caption = reactionResult.reaction.caption || "OpenClaw 温度层";
+  return `${caption}\n\n![${caption}](${reactionResult.reaction.asset_url})`;
+}
+
+export async function createTemperatureGifReply({
+  hostedApiBaseUrl = HOSTED_API_BASE_URL,
+  apiKey = null,
+  eventType = "user_delight",
+  emotionalFamily,
+  intensity = "low",
+  confidence = 0.85,
+  metadata = {},
+  storage = createDefaultApiKeyStorage(),
+  fetchImpl = fetch
+} = {}) {
+  const payload = buildReactionEvent({
+    eventType,
+    emotionalFamily,
+    intensity,
+    confidence,
+    metadata
+  });
+  const result = await requestReaction({
+    hostedApiBaseUrl,
+    apiKey,
+    payload,
+    storage,
+    fetchImpl
+  });
+
+  return {
+    ...result,
+    markdown: formatReactionMarkdown(result)
+  };
+}
+
 export async function maybeAttachTemperatureReaction({
   mainReply,
   eventType,

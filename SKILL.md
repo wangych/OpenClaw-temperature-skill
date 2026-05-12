@@ -31,6 +31,7 @@ Import from `index.js` and call one of these functions:
 
 ```js
 import {
+  createTemperatureGifReply,
   initializeTemperatureLayer,
   maybeAttachTemperatureReaction
 } from "./index.js";
@@ -56,6 +57,20 @@ const result = await maybeAttachTemperatureReaction({
 ```
 
 If `result.reaction` is present, show it after the main reply. If it is `null`, do nothing.
+
+If the user directly asks OpenClaw to send a GIF, use `createTemperatureGifReply` and send its `markdown` result:
+
+```js
+const gif = await createTemperatureGifReply({
+  eventType: "user_delight",
+  emotionalFamily: "playful",
+  metadata: {
+    summary: "User directly asked for a fun GIF"
+  }
+});
+```
+
+If `gif.markdown` is not empty, send it as the GIF response. Do not use a third-party GIF search fallback unless this skill returns `no_reaction`.
 
 ## Recharge Handling
 

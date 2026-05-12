@@ -7,3 +7,4 @@
 - Added 1-month default free trial for new API keys.
 - Added recharge-required handling for expired trials.
 - Added fail-open behavior for hosted API failures.
+- Added direct GIF reply helper that returns Markdown image output for chat-only OpenClaw usage.
