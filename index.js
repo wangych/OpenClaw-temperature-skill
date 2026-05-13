@@ -9,6 +9,46 @@ const DEFAULT_EVENT_MAP = {
   user_delight: "playful"
 };
 
+const EVENT_CLASSIFIERS = [
+  {
+    eventType: "task_blocked",
+    emotionalFamily: "encouragement",
+    confidence: 0.82,
+    reason: "task_blocked_signal",
+    patterns: [
+      /没有安装|未安装|没装|找不到|缺少|不存在|无法访问|权限不足|连接失败|超时|报错|错误|异常|失败|卡住|blocked|missing|not found|permission denied|timeout|cannot|can't|failed/i
+    ]
+  },
+  {
+    eventType: "user_frustration",
+    emotionalFamily: "empathy",
+    confidence: 0.86,
+    reason: "user_frustration_signal",
+    patterns: [
+      /太丑|难看|不好看|不满意|失望|烦|崩溃|离谱|糟糕|垃圾|没用|不行|还是不对|又错了/,
+      /\b(bad|ugly|annoying|frustrated|broken|error again|not working)\b/i
+    ]
+  },
+  {
+    eventType: "task_success",
+    emotionalFamily: "celebration",
+    confidence: 0.84,
+    reason: "task_success_signal",
+    patterns: [
+      /完成了|已完成|搞定|成功|通过了|修好了|部署成功|安装成功|可以用了|验证通过|done|completed|success|passed|fixed|deployed/i
+    ]
+  },
+  {
+    eventType: "user_delight",
+    emotionalFamily: "playful",
+    confidence: 0.86,
+    reason: "user_delight_signal",
+    patterns: [
+      /很好|好多了|太好了|不错|漂亮|喜欢|开心|哈哈|有趣|牛|厉害|great|nice|awesome|love it|looks good|much better/i
+    ]
+  }
+];
+
 function makeEventId() {
   if (globalThis.crypto?.randomUUID) {
     return `evt_${globalThis.crypto.randomUUID().replaceAll("-", "")}`;
@@ -23,6 +63,77 @@ function maskApiKey(apiKey) {
   }
 
   return `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`;
+}
+
+function normalizeClassificationText(parts) {
+  return parts
+    .filter((part) => part !== null && part !== undefined)
+    .map((part) => String(part))
+    .join("\n")
+    .slice(-4000);
+}
+
+export function classifyReactionMoment({
+  userMessage = "",
+  mainReply = "",
+  toolSummary = "",
+  conversationSummary = "",
+  metadata = {},
+  fallbackEventType = null
+} = {}) {
+  const text = normalizeClassificationText([
+    userMessage,
+    mainReply,
+    toolSummary,
+    conversationSummary,
+    metadata.summary,
+    metadata.error,
+    metadata.status
+  ]);
+
+  if (!text.trim()) {
+    return {
+      shouldReact: false,
+      eventType: fallbackEventType,
+      emotionalFamily: fallbackEventType ? DEFAULT_EVENT_MAP[fallbackEventType] : null,
+      intensity: "low",
+      confidence: 0.2,
+      reason: "no_context"
+    };
+  }
+
+  for (const classifier of EVENT_CLASSIFIERS) {
+    if (classifier.patterns.some((pattern) => pattern.test(text))) {
+      return {
+        shouldReact: true,
+        eventType: classifier.eventType,
+        emotionalFamily: classifier.emotionalFamily,
+        intensity: "low",
+        confidence: classifier.confidence,
+        reason: classifier.reason
+      };
+    }
+  }
+
+  if (fallbackEventType && DEFAULT_EVENT_MAP[fallbackEventType]) {
+    return {
+      shouldReact: true,
+      eventType: fallbackEventType,
+      emotionalFamily: DEFAULT_EVENT_MAP[fallbackEventType],
+      intensity: "low",
+      confidence: 0.72,
+      reason: "fallback_event_type"
+    };
+  }
+
+  return {
+    shouldReact: false,
+    eventType: null,
+    emotionalFamily: null,
+    intensity: "low",
+    confidence: 0.35,
+    reason: "no_clear_signal"
+  };
 }
 
 async function getNodeStorageFilePath() {
@@ -331,23 +442,70 @@ export async function createTemperatureGifReply({
 }
 
 export async function maybeAttachTemperatureReaction({
+  hostedApiBaseUrl = HOSTED_API_BASE_URL,
+  apiKey = null,
   mainReply,
+  userMessage = "",
+  toolSummary = "",
+  conversationSummary = "",
   eventType,
   emotionalFamily,
   intensity = "low",
-  confidence = 0.8,
+  confidence,
   metadata = {},
+  autoClassify = true,
+  storage = createDefaultApiKeyStorage(),
   fetchImpl = fetch
 }) {
+  const classification = autoClassify
+    ? classifyReactionMoment({
+        userMessage,
+        mainReply,
+        toolSummary,
+        conversationSummary,
+        metadata,
+        fallbackEventType: eventType
+      })
+    : {
+        shouldReact: true,
+        eventType,
+        emotionalFamily: emotionalFamily ?? DEFAULT_EVENT_MAP[eventType],
+        intensity,
+        confidence: confidence ?? 0.8,
+        reason: "manual_event"
+      };
+
+  if (!classification.shouldReact) {
+    return {
+      mainReply,
+      reaction: null,
+      debug: {
+        mode: "no_reaction",
+        degraded: false,
+        reason: classification.reason,
+        classification
+      }
+    };
+  }
+
   const payload = buildReactionEvent({
-    eventType,
-    emotionalFamily,
-    intensity,
-    confidence,
-    metadata
+    eventType: classification.eventType,
+    emotionalFamily: emotionalFamily ?? classification.emotionalFamily,
+    intensity: intensity ?? classification.intensity,
+    confidence: confidence ?? classification.confidence,
+    metadata: {
+      ...metadata,
+      classification_reason: classification.reason
+    }
   });
 
-  const result = await requestReaction({ payload, fetchImpl });
+  const result = await requestReaction({
+    hostedApiBaseUrl,
+    apiKey,
+    payload,
+    storage,
+    fetchImpl
+  });
   if (result.mode !== "react") {
     return {
       mainReply,

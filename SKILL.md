@@ -11,6 +11,7 @@ This is a thin OpenClaw client for the hosted OpenClaw Temperature service:
 - Each new API key gets a 1-month free trial by default.
 - It stores the API key locally in OpenClaw's runtime.
 - It asks the hosted API whether a GIF reaction should be shown.
+- It can classify common conversation moments into supported reaction events.
 - It returns a recharge prompt when the free trial has expired.
 - It fails open: if the hosted API is unavailable, OpenClaw should continue the main reply without a GIF.
 
@@ -43,13 +44,12 @@ Run initialization once if OpenClaw supports an install/init step:
 const init = await initializeTemperatureLayer();
 ```
 
-For normal usage, call after OpenClaw has produced the main reply:
+For normal usage, call after OpenClaw has produced the main reply. Prefer passing natural context and let the skill classify the moment:
 
 ```js
 const result = await maybeAttachTemperatureReaction({
   mainReply,
-  eventType: "task_blocked",
-  intensity: "low",
+  userMessage,
   metadata: {
     summary: "User is blocked by an install or environment issue"
   }
@@ -57,6 +57,19 @@ const result = await maybeAttachTemperatureReaction({
 ```
 
 If `result.reaction` is present, show it after the main reply. If it is `null`, do nothing.
+
+You can still pass an explicit `eventType` when OpenClaw already knows the trigger:
+
+```js
+const result = await maybeAttachTemperatureReaction({
+  mainReply,
+  eventType: "task_blocked",
+  autoClassify: false,
+  metadata: {
+    summary: "Dependency is missing"
+  }
+});
+```
 
 If the user directly asks OpenClaw to send a GIF, use `createTemperatureGifReply` and send its `markdown` result:
 

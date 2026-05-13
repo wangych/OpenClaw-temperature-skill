@@ -61,6 +61,24 @@ Start with only these:
 
 Do not call this skill on every turn. It is designed for occasional emotional value, not constant animation.
 
+## Auto Classification
+
+For normal after-reply usage, OpenClaw can pass natural context and let the skill map it to the supported event taxonomy:
+
+```js
+import { maybeAttachTemperatureReaction } from "./index.js";
+
+const result = await maybeAttachTemperatureReaction({
+  mainReply,
+  userMessage,
+  metadata: {
+    summary: "Short non-sensitive context"
+  }
+});
+```
+
+The classifier is intentionally conservative. If it does not see a clear success, blocked-task, frustration, or delight signal, it returns `no_reaction` without calling the hosted API.
+
 ## Direct GIF Requests
 
 If the user directly asks OpenClaw to send a GIF, call `createTemperatureGifReply`:

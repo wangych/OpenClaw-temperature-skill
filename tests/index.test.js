@@ -3,9 +3,11 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import {
   buildReactionEvent,
+  classifyReactionMoment,
   createTemperatureGifReply,
   formatReactionMarkdown,
   initializeTemperatureLayer,
+  maybeAttachTemperatureReaction,
   requestReaction
 } from "../index.js";
 
@@ -104,6 +106,84 @@ test("formats a direct GIF response as markdown", async () => {
   assert.equal(markdown.includes("这下气氛立刻活过来了"), true);
   assert.equal(markdown.includes("![这下气氛立刻活过来了]("), true);
   assert.equal(markdown.includes("playful-user_delight-low-001.gif"), true);
+});
+
+test("classifies natural context into supported reaction events", () => {
+  const blocked = classifyReactionMoment({
+    userMessage: "这里报错了，提示没有安装依赖",
+    mainReply: "我先检查安装状态。"
+  });
+  const delight = classifyReactionMoment({
+    userMessage: "现在好多了，这个看起来不错",
+    mainReply: "我会继续保持这个方向。"
+  });
+  const quiet = classifyReactionMoment({
+    userMessage: "继续",
+    mainReply: "我会读取相关文件并更新实现。"
+  });
+
+  assert.equal(blocked.shouldReact, true);
+  assert.equal(blocked.eventType, "task_blocked");
+  assert.equal(blocked.emotionalFamily, "encouragement");
+  assert.equal(delight.shouldReact, true);
+  assert.equal(delight.eventType, "user_delight");
+  assert.equal(quiet.shouldReact, false);
+});
+
+test("auto-classifies before requesting a reaction", async () => {
+  const calls = [];
+  const storage = {
+    async getItem() {
+      return "ocl_auto_classify_key";
+    },
+    async setItem() {
+      throw new Error("should not write storage");
+    }
+  };
+  const fetchImpl = async (url, options) => {
+    calls.push({ url, body: JSON.parse(options.body) });
+    return new Response(JSON.stringify({
+      decision: {
+        status: "reacted",
+        reason_codes: ["eligible", "asset_exact_match"]
+      },
+      reaction: {
+        caption: "别慌，我来兜底",
+        asset_url: "https://claw-temp.nydhfc.cn/assets/gifs/encouragement/task_blocked/low/encouragement-task_blocked-low-002.gif"
+      }
+    }), { status: 200 });
+  };
+
+  const result = await maybeAttachTemperatureReaction({
+    mainReply: "我发现当前环境没有安装这个工具，先帮你检查安装方式。",
+    userMessage: "为什么运行不了？",
+    metadata: {
+      summary: "用户遇到环境问题"
+    },
+    storage,
+    fetchImpl
+  });
+
+  assert.equal(result.reaction.caption, "别慌，我来兜底");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].body.event.event_type, "task_blocked");
+  assert.equal(calls[0].body.event.emotional_family, "encouragement");
+  assert.equal(calls[0].body.event.metadata.classification_reason, "task_blocked_signal");
+});
+
+test("stays quiet when auto-classification has no clear signal", async () => {
+  const fetchImpl = async () => {
+    throw new Error("should not call hosted API");
+  };
+
+  const result = await maybeAttachTemperatureReaction({
+    mainReply: "我会继续读取文件并检查实现。",
+    userMessage: "继续",
+    fetchImpl
+  });
+
+  assert.equal(result.reaction, null);
+  assert.equal(result.debug.reason, "no_clear_signal");
 });
 
 test("creates markdown for direct user GIF requests", async () => {
