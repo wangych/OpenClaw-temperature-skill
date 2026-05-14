@@ -387,7 +387,8 @@ export function attachReactionAfterReply({ mainReply, reactionResult }) {
     reaction: {
       displayMode: "after_main_reply",
       caption: reactionResult.reaction.caption,
-      assetUrl: reactionResult.reaction.asset_url
+      assetUrl: reactionResult.reaction.asset_url,
+      openUrl: reactionResult.reaction.open_url ?? reactionResult.reaction.asset_url
     }
   };
 }
@@ -406,7 +407,8 @@ export function formatReactionMarkdown(reactionResult) {
   }
 
   const caption = reactionResult.reaction.caption || "OpenClaw 温度层";
-  return `${caption}\n\n![${caption}](${reactionResult.reaction.asset_url})`;
+  const openUrl = reactionResult.reaction.open_url ?? reactionResult.reaction.asset_url;
+  return `${caption}\n\n![${caption}](${reactionResult.reaction.asset_url})\n\n微信里如果不动，点这里看动图：${openUrl}`;
 }
 
 export async function createTemperatureGifReply({
@@ -519,7 +521,8 @@ export async function maybeAttachTemperatureReaction({
     reaction: {
       displayMode: "after_main_reply",
       caption: result.reaction.caption,
-      assetUrl: result.reaction.asset_url
+      assetUrl: result.reaction.asset_url,
+      openUrl: result.reaction.open_url ?? result.reaction.asset_url
     },
     debug: result
   };

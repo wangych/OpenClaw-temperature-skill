@@ -85,6 +85,8 @@ const gif = await createTemperatureGifReply({
 
 If `gif.markdown` is not empty, send it as the GIF response. Do not use a third-party GIF search fallback unless this skill returns `no_reaction`.
 
+Some chat surfaces, especially WeChat bridges, render external GIF markdown as a static first-frame preview. When this happens, keep the preview and also show the `open_url`/markdown playback link returned by this skill so the user can tap through to the hosted animation page.
+
 ## Recharge Handling
 
 When the API key trial has expired, the hosted API returns `recharge_required`. This skill surfaces it as:

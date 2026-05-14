@@ -97,6 +97,8 @@ const gif = await createTemperatureGifReply({
 
 Send `gif.markdown` if it is not empty.
 
+If the chat surface renders external GIF markdown as a static preview, such as some WeChat bridges, the markdown also includes a hosted playback link. Open that link to see the animated version.
+
 ## Security Notes
 
 This skill:

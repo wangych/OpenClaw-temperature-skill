@@ -97,7 +97,8 @@ test("formats a direct GIF response as markdown", async () => {
     mode: "react",
     reaction: {
       caption: "这下气氛立刻活过来了",
-      asset_url: "https://claw-temp.nydhfc.cn/assets/gifs/playful/user_delight/low/playful-user_delight-low-001.gif"
+      asset_url: "https://claw-temp.nydhfc.cn/assets/gifs/playful/user_delight/low/playful-user_delight-low-001.gif",
+      open_url: "https://claw-temp.nydhfc.cn/r/playful.user_delight.low.001?v=motion-v2"
     }
   };
 
@@ -106,6 +107,7 @@ test("formats a direct GIF response as markdown", async () => {
   assert.equal(markdown.includes("这下气氛立刻活过来了"), true);
   assert.equal(markdown.includes("![这下气氛立刻活过来了]("), true);
   assert.equal(markdown.includes("playful-user_delight-low-001.gif"), true);
+  assert.equal(markdown.includes("微信里如果不动，点这里看动图：https://claw-temp.nydhfc.cn/r/playful.user_delight.low.001?v=motion-v2"), true);
 });
 
 test("classifies natural context into supported reaction events", () => {
