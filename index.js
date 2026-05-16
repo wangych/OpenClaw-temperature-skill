@@ -296,7 +296,7 @@ export async function initializeTemperatureLayer({
     apiKeyHint: maskApiKey(resolved.apiKey),
     source: resolved.source,
     trialExpiresAt: resolved.registration?.trial_expires_at ?? null,
-    rechargeUrl: resolved.registration?.recharge_url ?? `${hostedApiBaseUrl}/buy`,
+    rechargeUrl: resolved.registration?.recharge_url ?? `${hostedApiBaseUrl}/recharge`,
     message:
       resolved.source === "registered"
         ? "OpenClaw 温度层已开启 1 个月免费试用。"
@@ -325,15 +325,8 @@ export async function getRechargeInstructions({
     apiKey: resolved.apiKey,
     apiKeyHint: maskApiKey(resolved.apiKey),
     price: settings.betaPriceDisplay ?? "5 元 / 月",
-    paymentMethod: settings.paymentMethodLabel ?? "微信 / 支付宝人工收款",
-    paymentQrImageUrl: settings.paymentQrImageUrl ?? null,
-    paymentRecipient: settings.paymentRecipient ?? "联系我获取收款二维码或付款方式",
-    paymentInstructions:
-      settings.paymentInstructions
-      ?? "付款后请在购买页提交 API key 和付款凭证，我会人工确认并续期。",
-    buyPageUrl: `${hostedApiBaseUrl}/recharge?api_key=${encodeURIComponent(resolved.apiKey)}`,
-    fallbackBuyPageUrl: settings.buy_page_url ?? `${hostedApiBaseUrl}/buy`,
-    statusPageUrl: settings.status_page_url ?? `${hostedApiBaseUrl}/status`
+    paymentMethod: settings.paymentMethodLabel ?? "支付宝扫码",
+    buyPageUrl: `${hostedApiBaseUrl}/recharge?api_key=${encodeURIComponent(resolved.apiKey)}`
   };
 }
 
@@ -377,7 +370,7 @@ export async function requestReaction({
           apiKey: resolved.apiKey,
           apiKeyHint: maskApiKey(resolved.apiKey),
           reason: "trial_expired",
-          rechargeUrl: errorBody.recharge_url ?? recharge?.buyPageUrl ?? `${hostedApiBaseUrl}/buy`,
+          rechargeUrl: errorBody.recharge_url ?? recharge?.buyPageUrl ?? `${hostedApiBaseUrl}/recharge`,
           recharge
         };
       }

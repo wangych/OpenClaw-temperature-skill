@@ -27,7 +27,7 @@ test("initializes by auto-registering a trial key", async () => {
       api_key_registration: {
         status: "trial_active",
         trial_expires_at: "2026-06-10T00:00:00.000Z",
-        recharge_url: "https://claw-temp.nydhfc.cn/buy",
+        recharge_url: "https://claw-temp.nydhfc.cn/recharge",
         apiKey: {
           token: "ocl_publishable_trial_key"
         }
@@ -67,7 +67,7 @@ test("returns recharge-required for expired trials", async () => {
           paymentMethodLabel: "微信扫码",
           paymentQrImageUrl: "https://claw-temp.nydhfc.cn/pay/qr.png",
           paymentInstructions: "付款后提交 API key 和付款凭证。",
-          buy_page_url: "https://claw-temp.nydhfc.cn/buy",
+          buy_page_url: "https://claw-temp.nydhfc.cn/recharge",
           status_page_url: "https://claw-temp.nydhfc.cn/status"
         }
       }), { status: 200 });
@@ -76,7 +76,7 @@ test("returns recharge-required for expired trials", async () => {
     assert.equal(url, "https://claw-temp.nydhfc.cn/v1/reactions/decide");
     return new Response(JSON.stringify({
       code: "recharge_required",
-      recharge_url: "https://claw-temp.nydhfc.cn/buy"
+      recharge_url: "https://claw-temp.nydhfc.cn/recharge"
     }), { status: 402 });
   };
 
@@ -85,9 +85,11 @@ test("returns recharge-required for expired trials", async () => {
   assert.equal(result.mode, "recharge_required");
   assert.equal(result.degraded, false);
   assert.equal(result.reason, "trial_expired");
-  assert.equal(result.rechargeUrl, "https://claw-temp.nydhfc.cn/buy");
+  assert.equal(result.rechargeUrl, "https://claw-temp.nydhfc.cn/recharge");
   assert.equal(result.apiKeyHint, "ocl_ex..._key");
-  assert.equal(result.recharge.paymentQrImageUrl, "https://claw-temp.nydhfc.cn/pay/qr.png");
+  assert.equal(result.recharge.paymentQrImageUrl, undefined);
+  assert.equal(result.recharge.paymentInstructions, undefined);
+  assert.equal(result.recharge.statusPageUrl, undefined);
   assert.equal(result.recharge.buyPageUrl, "https://claw-temp.nydhfc.cn/recharge?api_key=ocl_expired_trial_key");
   assert.equal(formatReactionMarkdown(result).includes("API Key：ocl_expired_trial_key"), true);
   assert.equal(formatReactionMarkdown(result).includes("打开充值网页：https://claw-temp.nydhfc.cn/recharge?api_key=ocl_expired_trial_key"), true);
