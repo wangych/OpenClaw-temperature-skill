@@ -331,7 +331,8 @@ export async function getRechargeInstructions({
     paymentInstructions:
       settings.paymentInstructions
       ?? "付款后请在购买页提交 API key 和付款凭证，我会人工确认并续期。",
-    buyPageUrl: settings.buy_page_url ?? `${hostedApiBaseUrl}/buy`,
+    buyPageUrl: `${hostedApiBaseUrl}/recharge?api_key=${encodeURIComponent(resolved.apiKey)}`,
+    fallbackBuyPageUrl: settings.buy_page_url ?? `${hostedApiBaseUrl}/buy`,
     statusPageUrl: settings.status_page_url ?? `${hostedApiBaseUrl}/status`
   };
 }
@@ -452,7 +453,7 @@ export function formatReactionMarkdown(reactionResult) {
 }
 
 export function formatRechargeMarkdown(recharge) {
-  const buyPageUrl = recharge.buyPageUrl ?? recharge.rechargeUrl ?? "https://claw-temp.nydhfc.cn/buy";
+  const buyPageUrl = recharge.buyPageUrl ?? recharge.rechargeUrl ?? "https://claw-temp.nydhfc.cn/recharge";
   const lines = [
     "OpenClaw 温度层试用已到期，需要充值后继续使用。",
     "",
@@ -471,7 +472,7 @@ export function formatRechargeMarkdown(recharge) {
   lines.push(
     recharge.paymentInstructions ?? "付款后请提交 API key 和付款凭证，我会人工确认并续期。",
     "",
-    `提交购买/充值申请：${buyPageUrl}`
+    `打开充值网页：${buyPageUrl}`
   );
 
   if (recharge.statusPageUrl) {

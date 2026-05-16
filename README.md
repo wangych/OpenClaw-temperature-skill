@@ -60,6 +60,7 @@ const markdown = formatRechargeMarkdown(recharge);
 ```
 
 If the hosted service has a payment QR image configured, `markdown` includes the QR image.
+The preferred action link is now `/recharge?api_key=...`, which opens a browser checkout page with the API key locked and amount options for 5, 10, 20, 50, and 100 yuan.
 
 ## Recommended Triggers
 

@@ -101,7 +101,7 @@ When the API key trial has expired, the hosted API returns `recharge_required`. 
 
 In that case, tell the user to open the recharge URL and renew the API key.
 
-For a user-initiated recharge flow inside OpenClaw, call `getRechargeInstructions()` and render it with `formatRechargeMarkdown()`. If the hosted service has a configured `paymentQrImageUrl`, the markdown includes the payment QR image directly.
+For a user-initiated recharge flow inside OpenClaw, call `getRechargeInstructions()` and render it with `formatRechargeMarkdown()`. The preferred link opens `/recharge?api_key=...`, where the API key is locked and the user can choose 5, 10, 20, 50, or 100 yuan. If the hosted service has a configured `paymentQrImageUrl`, the markdown also includes the payment QR image directly.
 
 ## Privacy And Safety
 

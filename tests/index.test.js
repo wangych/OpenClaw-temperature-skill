@@ -88,8 +88,10 @@ test("returns recharge-required for expired trials", async () => {
   assert.equal(result.rechargeUrl, "https://claw-temp.nydhfc.cn/buy");
   assert.equal(result.apiKeyHint, "ocl_ex..._key");
   assert.equal(result.recharge.paymentQrImageUrl, "https://claw-temp.nydhfc.cn/pay/qr.png");
+  assert.equal(result.recharge.buyPageUrl, "https://claw-temp.nydhfc.cn/recharge?api_key=ocl_expired_trial_key");
   assert.equal(formatReactionMarkdown(result).includes("![OpenClaw 温度层收款二维码](https://claw-temp.nydhfc.cn/pay/qr.png)"), true);
   assert.equal(formatReactionMarkdown(result).includes("API Key：ocl_expired_trial_key"), true);
+  assert.equal(formatReactionMarkdown(result).includes("打开充值网页：https://claw-temp.nydhfc.cn/recharge?api_key=ocl_expired_trial_key"), true);
 });
 
 test("contains marketplace metadata", async () => {
