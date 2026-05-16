@@ -454,32 +454,15 @@ export function formatReactionMarkdown(reactionResult) {
 
 export function formatRechargeMarkdown(recharge) {
   const buyPageUrl = recharge.buyPageUrl ?? recharge.rechargeUrl ?? "https://claw-temp.nydhfc.cn/recharge";
-  const lines = [
+  return [
     "OpenClaw 温度层试用已到期，需要充值后继续使用。",
     "",
     `价格：${recharge.price ?? "5 元 / 月"}`,
-    `付款方式：${recharge.paymentMethod ?? "微信 / 支付宝人工收款"}`,
+    `付款方式：${recharge.paymentMethod ?? "支付宝扫码"}`,
     `API Key：${recharge.apiKey ?? recharge.apiKeyHint ?? "请让 OpenClaw 读取本地保存的 ocl_ key"}`,
-    ""
-  ];
-
-  if (recharge.paymentQrImageUrl) {
-    lines.push(`![OpenClaw 温度层收款二维码](${recharge.paymentQrImageUrl})`, "");
-  } else if (recharge.paymentRecipient) {
-    lines.push(`收款说明：${recharge.paymentRecipient}`, "");
-  }
-
-  lines.push(
-    recharge.paymentInstructions ?? "付款后请提交 API key 和付款凭证，我会人工确认并续期。",
     "",
     `打开充值网页：${buyPageUrl}`
-  );
-
-  if (recharge.statusPageUrl) {
-    lines.push(`查询处理进度：${recharge.statusPageUrl}`);
-  }
-
-  return lines.join("\n");
+  ].join("\n");
 }
 
 export async function createTemperatureGifReply({
