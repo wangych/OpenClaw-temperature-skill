@@ -50,6 +50,17 @@ When the trial expires, the skill returns:
 
 OpenClaw should show the recharge URL to the user.
 
+OpenClaw can also show the recharge instructions directly in chat:
+
+```js
+import { formatRechargeMarkdown, getRechargeInstructions } from "./index.js";
+
+const recharge = await getRechargeInstructions();
+const markdown = formatRechargeMarkdown(recharge);
+```
+
+If the hosted service has a payment QR image configured, `markdown` includes the QR image.
+
 ## Recommended Triggers
 
 Start with only these:

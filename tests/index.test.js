@@ -60,6 +60,19 @@ test("returns recharge-required for expired trials", async () => {
     }
   };
   const fetchImpl = async (url) => {
+    if (url === "https://claw-temp.nydhfc.cn/v1/public/commerce-settings") {
+      return new Response(JSON.stringify({
+        commerce_settings: {
+          betaPriceDisplay: "5 元 / 月",
+          paymentMethodLabel: "微信扫码",
+          paymentQrImageUrl: "https://claw-temp.nydhfc.cn/pay/qr.png",
+          paymentInstructions: "付款后提交 API key 和付款凭证。",
+          buy_page_url: "https://claw-temp.nydhfc.cn/buy",
+          status_page_url: "https://claw-temp.nydhfc.cn/status"
+        }
+      }), { status: 200 });
+    }
+
     assert.equal(url, "https://claw-temp.nydhfc.cn/v1/reactions/decide");
     return new Response(JSON.stringify({
       code: "recharge_required",
@@ -74,6 +87,9 @@ test("returns recharge-required for expired trials", async () => {
   assert.equal(result.reason, "trial_expired");
   assert.equal(result.rechargeUrl, "https://claw-temp.nydhfc.cn/buy");
   assert.equal(result.apiKeyHint, "ocl_ex..._key");
+  assert.equal(result.recharge.paymentQrImageUrl, "https://claw-temp.nydhfc.cn/pay/qr.png");
+  assert.equal(formatReactionMarkdown(result).includes("![OpenClaw 温度层收款二维码](https://claw-temp.nydhfc.cn/pay/qr.png)"), true);
+  assert.equal(formatReactionMarkdown(result).includes("API Key：ocl_expired_trial_key"), true);
 });
 
 test("contains marketplace metadata", async () => {

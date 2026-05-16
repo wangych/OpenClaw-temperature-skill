@@ -304,6 +304,38 @@ export async function initializeTemperatureLayer({
   };
 }
 
+export async function getRechargeInstructions({
+  hostedApiBaseUrl = HOSTED_API_BASE_URL,
+  apiKey = null,
+  storage = createDefaultApiKeyStorage(),
+  fetchImpl = fetch
+} = {}) {
+  const resolved = await ensureApiKey({
+    hostedApiBaseUrl,
+    apiKey,
+    storage,
+    fetchImpl
+  });
+  const response = await fetchImpl(`${hostedApiBaseUrl}/v1/public/commerce-settings`);
+  const body = response.ok ? await response.json() : {};
+  const settings = body.commerce_settings ?? {};
+
+  return {
+    mode: "recharge_instructions",
+    apiKey: resolved.apiKey,
+    apiKeyHint: maskApiKey(resolved.apiKey),
+    price: settings.betaPriceDisplay ?? "5 元 / 月",
+    paymentMethod: settings.paymentMethodLabel ?? "微信 / 支付宝人工收款",
+    paymentQrImageUrl: settings.paymentQrImageUrl ?? null,
+    paymentRecipient: settings.paymentRecipient ?? "联系我获取收款二维码或付款方式",
+    paymentInstructions:
+      settings.paymentInstructions
+      ?? "付款后请在购买页提交 API key 和付款凭证，我会人工确认并续期。",
+    buyPageUrl: settings.buy_page_url ?? `${hostedApiBaseUrl}/buy`,
+    statusPageUrl: settings.status_page_url ?? `${hostedApiBaseUrl}/status`
+  };
+}
+
 export async function requestReaction({
   hostedApiBaseUrl = HOSTED_API_BASE_URL,
   apiKey = null,
@@ -332,12 +364,20 @@ export async function requestReaction({
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
       if (response.status === 402 || errorBody.code === "recharge_required") {
+        const recharge = await getRechargeInstructions({
+          hostedApiBaseUrl,
+          apiKey: resolved.apiKey,
+          storage,
+          fetchImpl
+        }).catch(() => null);
         return {
           mode: "recharge_required",
           degraded: false,
+          apiKey: resolved.apiKey,
           apiKeyHint: maskApiKey(resolved.apiKey),
           reason: "trial_expired",
-          rechargeUrl: errorBody.recharge_url ?? `${hostedApiBaseUrl}/buy`
+          rechargeUrl: errorBody.recharge_url ?? recharge?.buyPageUrl ?? `${hostedApiBaseUrl}/buy`,
+          recharge
         };
       }
 
@@ -399,7 +439,7 @@ export function formatReactionMarkdown(reactionResult) {
   }
 
   if (reactionResult.mode === "recharge_required") {
-    return `OpenClaw 温度层试用已到期，请续期后继续使用：${reactionResult.rechargeUrl}`;
+    return formatRechargeMarkdown(reactionResult.recharge ?? reactionResult);
   }
 
   if (reactionResult.mode !== "react" || !reactionResult.reaction) {
@@ -409,6 +449,36 @@ export function formatReactionMarkdown(reactionResult) {
   const caption = reactionResult.reaction.caption || "OpenClaw 温度层";
   const openUrl = reactionResult.reaction.open_url ?? reactionResult.reaction.asset_url;
   return `${caption}\n\n![${caption}](${reactionResult.reaction.asset_url})\n\n微信里如果不动，点这里看动图：${openUrl}`;
+}
+
+export function formatRechargeMarkdown(recharge) {
+  const buyPageUrl = recharge.buyPageUrl ?? recharge.rechargeUrl ?? "https://claw-temp.nydhfc.cn/buy";
+  const lines = [
+    "OpenClaw 温度层试用已到期，需要充值后继续使用。",
+    "",
+    `价格：${recharge.price ?? "5 元 / 月"}`,
+    `付款方式：${recharge.paymentMethod ?? "微信 / 支付宝人工收款"}`,
+    `API Key：${recharge.apiKey ?? recharge.apiKeyHint ?? "请让 OpenClaw 读取本地保存的 ocl_ key"}`,
+    ""
+  ];
+
+  if (recharge.paymentQrImageUrl) {
+    lines.push(`![OpenClaw 温度层收款二维码](${recharge.paymentQrImageUrl})`, "");
+  } else if (recharge.paymentRecipient) {
+    lines.push(`收款说明：${recharge.paymentRecipient}`, "");
+  }
+
+  lines.push(
+    recharge.paymentInstructions ?? "付款后请提交 API key 和付款凭证，我会人工确认并续期。",
+    "",
+    `提交购买/充值申请：${buyPageUrl}`
+  );
+
+  if (recharge.statusPageUrl) {
+    lines.push(`查询处理进度：${recharge.statusPageUrl}`);
+  }
+
+  return lines.join("\n");
 }
 
 export async function createTemperatureGifReply({
